@@ -1,42 +1,43 @@
 terraform {
   required_providers {
     docker = {
-      source = "kreuzwerker/docker"
+      source  = "kreuzwerker/docker"
       version = "3.0.2"
     }
   }
 }
 
 provider "docker" {
-  host = "unix:///var/run/docker.sock"
+  host = "npipe:////.//pipe//docker_engine"
 }
 
-resource "docker_volume" "jenkins_home" {
-  name = "jenkins_home"
+# Create custom network
+resource "docker_network" "web_network" {
+  name = "web_network"
 }
 
-resource "docker_container" "jenkins" {
-  name  = "jenkins"
-  image = "jenkins/jenkins:lts"
-  
+# Create Nginx container
+resource "docker_container" "nginx" {
+  name  = "webapp"
+  image = docker_image.nginx.image_id
+
   ports {
-    internal = 8080
+    internal = 80
     external = 8080
   }
-  
-  ports {
-    internal = 50000
-    external = 50000
+
+  networks_advanced {
+    name = docker_network.web_network.name
   }
-  
+
   volumes {
-    volume_name    = docker_volume.jenkins_home.name
-    container_path = "/var/jenkins_home"
+    host_path      = "${abspath(path.root)}/app"
+    container_path = "/usr/share/nginx/html"
+    read_only      = true
   }
-  
-  restart = "unless-stopped"
 }
 
-output "jenkins_ip" {
-  value = docker_container.jenkins.network_data[0].ip_address
+# Pull Nginx image
+resource "docker_image" "nginx" {
+  name = "nginx:latest"
 }

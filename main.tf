@@ -2,15 +2,15 @@
 terraform {
   required_providers {
     docker = {
-      source  = "kreuzwerker/docker"
-      version = "~> 3.0.0"
+      source = "kreuzwerker/docker"
+      version = "3.0.2"
     }
   }
 }
 
 # Configure the Docker provider
 provider "docker" {
-  host = "npipe:////.//pipe//docker_engine"
+  host = "unix:///var/run/docker.sock"
 }
 
 # Create a Docker volume for persistent Jenkins data
@@ -45,16 +45,10 @@ resource "docker_container" "jenkins" {
     container_path = "/var/jenkins_home"
   }
   
+  volumes {
+    host_path      = "/var/run/docker.sock"
+    container_path = "/var/run/docker.sock"
+  }
+  
   restart = "unless-stopped"
-}
-
-# Output important information
-output "jenkins_url" {
-  value = "http://localhost:8080"
-  description = "The URL to access Jenkins"
-}
-
-output "jenkins_container_id" {
-  value = docker_container.jenkins.id
-  description = "The ID of the Jenkins container"
 }

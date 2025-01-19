@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  webapp:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - ./app:/usr/share/nginx/html:ro
+    networks:
+      - web_network
+
+networks:
+  web_network:
+    driver: bridge

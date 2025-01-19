@@ -1,4 +1,3 @@
-# Configure terraform and required providers
 terraform {
   required_providers {
     docker = {
@@ -8,27 +7,17 @@ terraform {
   }
 }
 
-# Configure the Docker provider
 provider "docker" {
   host = "unix:///var/run/docker.sock"
 }
 
-# Create a Docker volume for persistent Jenkins data
 resource "docker_volume" "jenkins_home" {
   name = "jenkins_home"
-  driver = "local"
 }
 
-# Pull the Jenkins Docker image
-resource "docker_image" "jenkins" {
-  name = "jenkins/jenkins:lts"
-  keep_locally = true
-}
-
-# Create the Jenkins container
 resource "docker_container" "jenkins" {
   name  = "jenkins"
-  image = docker_image.jenkins.image_id
+  image = "jenkins/jenkins:lts"
   
   ports {
     internal = 8080
@@ -45,10 +34,9 @@ resource "docker_container" "jenkins" {
     container_path = "/var/jenkins_home"
   }
   
-  volumes {
-    host_path      = "/var/run/docker.sock"
-    container_path = "/var/run/docker.sock"
-  }
-  
   restart = "unless-stopped"
+}
+
+output "jenkins_ip" {
+  value = docker_container.jenkins.network_data[0].ip_address
 }
